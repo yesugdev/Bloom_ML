@@ -1,0 +1,43 @@
+Sub CallAPIForAllRows()
+    Dim http As Object
+    Dim JSON As String
+    Dim URL As String
+    Dim lastRow As Long
+    Dim i As Long
+    Dim question As String
+
+    ' Define API URL
+    URL = "http://localhost:8000/api/predict/"
+
+    ' Find last row in Column A with data
+    lastRow = Cells(Rows.Count, 1).End(xlUp).Row
+
+    ' Loop through all rows in Column A
+    For i = 1 To lastRow
+        question = Cells(i, 1).Value ' Read question from Column A
+        
+        ' Skip empty rows
+        If Trim(question) <> "" Then
+            ' Construct JSON request body
+            JSON = "{""question"":""" & question & """}"
+
+            ' Create HTTP Object
+            Set http = CreateObject("MSXML2.XMLHTTP")
+
+            ' Open HTTP POST request
+            http.Open "POST", URL, False
+            http.SetRequestHeader "Content-Type", "application/json"
+            http.SetRequestHeader "Accept", "application/json"
+
+            ' Send JSON data
+            http.Send JSON
+
+            ' Output response to Column B
+            Cells(i, 2).Value = http.responseText
+
+            ' Release Object
+            Set http = Nothing
+        End If
+    Next i
+End Sub
+

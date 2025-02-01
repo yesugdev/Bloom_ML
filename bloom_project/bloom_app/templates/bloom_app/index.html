@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bloom's Taxonomy Level Predictor</title>
+</head>
+<body>
+    <h1>Bloom's Taxonomy Level Predictor</h1>
+    <form method="post">
+        {% csrf_token %}
+        <label for="question">Enter a question:</label>
+        <input type="text" id="question" name="question" required>
+        <button type="submit">Predict</button>
+    </form>
+    {% if bloom_level %}
+        <h2>Predicted Bloom's Level: {{ bloom_level }}</h2>
+    {% endif %}
+</body>
+</html>
