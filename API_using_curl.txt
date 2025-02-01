@@ -2,4 +2,4 @@ curl -X POST ^
   http://localhost:8000/api/predict/ ^
   -H "Content-Type: application/json" ^
   -H "Accept: application/json" ^
-  -d "{\"question\":\"What is the capital of France?\"}"
+  -d "{\"question\":\"Жишээ асуулт?\"}"
