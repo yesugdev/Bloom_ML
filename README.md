@@ -61,5 +61,4 @@ Microsoft Excel
 ```
 👨‍💻 Зохиогч
 Yesug Bekhbold
-📄 Лиценз
-MIT License
+
