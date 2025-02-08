@@ -12,6 +12,15 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from tqdm import tqdm
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from django.http import HttpResponse
+from .models import EmotionAnalyzer
+from .serializers import EmotionSerializer, EmotionResponseSerializer
+import pandas as pd
+import io
+
 # Load and preprocess data
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 file_path = os.path.join(BASE_DIR, '8000_Блоом_түвшин_датасэт.xlsx')
@@ -63,3 +72,91 @@ def predict_bloom_level_api(request):
             {'error': str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+from .models import EmotionAnalyzer  # Update import
+
+# Initialize emotion analyzer
+emotion_analyzer = EmotionAnalyzer()
+
+@api_view(['POST'])
+def predict_emotion_api(request):
+    try:
+        # Validate input data
+        serializer = EmotionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {'error': 'Invalid input data', 'details': serializer.errors}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get text from validated data
+        text = serializer.validated_data['text']
+        
+        # Predict emotion
+        emotion, confidence = emotion_analyzer.predict_emotion(text)
+        
+        # Prepare response
+        response_data = {
+            'emotion': emotion,
+            'confidence': float(confidence)
+        }
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response(
+            {'error': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+# Test with curl:
+# curl -X POST http://localhost:8000/api/emotion/ -H "Content-Type: application/json" -d "{\"text\":\"I am feeling happy today\"}"
+
+@api_view(['POST'])
+def predict_emotion(request):
+    try:
+        serializer = EmotionSerializer(data=request.data)
+        if serializer.is_valid():
+            text = serializer.validated_data['text']
+            emotion, confidence = emotion_analyzer.predict_emotion(text)
+            
+            response_data = {
+                'emotion': emotion,
+                'confidence': confidence
+            }
+            
+            response_serializer = EmotionResponseSerializer(data=response_data)
+            if response_serializer.is_valid():
+                return Response(response_serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def export_emotion_excel(request):
+    try:
+        serializer = EmotionSerializer(data=request.data)
+        if serializer.is_valid():
+            text = serializer.validated_data['text']
+            emotion, confidence = emotion_analyzer.predict_emotion(text)
+            
+            df = pd.DataFrame({
+                'Text': [text],
+                'Emotion': [emotion],
+                'Confidence': [confidence]
+            })
+            
+            excel_file = io.BytesIO()
+            df.to_excel(excel_file, index=False)
+            excel_file.seek(0)
+            
+            response = HttpResponse(
+                excel_file.read(),
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = 'attachment; filename=emotion_analysis.xlsx'
+            return response
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

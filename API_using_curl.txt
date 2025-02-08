@@ -3,3 +3,5 @@ curl -X POST ^
   -H "Content-Type: application/json" ^
   -H "Accept: application/json" ^
   -d "{\"question\":\"Жишээ асуулт?\"}"
+
+  curl -X POST http://localhost:8000/api/emotion/ -H "Content-Type: application/json" -d "{\"text\":\"Би зүгээр л уйтгартай, хөхөрч байна\"}"

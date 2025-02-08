@@ -1,0 +1,46 @@
+Sub Emotion()
+    Dim http As Object
+    Dim JSON As String
+    Dim URL As String
+    Dim lastRow As Long
+    Dim i As Long
+    Dim question As String
+
+    ' Define API URL
+    URL = "http://localhost:8000/api/emotion/"
+
+    ' Find last row in Column A with data
+    lastRow = Cells(Rows.Count, 1).End(xlUp).Row
+
+    ' Loop through all rows in Column A
+    For i = 1 To lastRow
+        question = Cells(i, 1).Value ' Read text from Column A
+
+        ' Skip empty rows
+        If Trim(question) <> "" Then
+            ' Construct JSON request body (match API expected format)
+            JSON = "{""text"":""" & question & """}"
+
+            ' Create HTTP Object
+            Set http = CreateObject("MSXML2.XMLHTTP")
+
+            ' Open HTTP POST request
+            http.Open "POST", URL, False
+            http.SetRequestHeader "Content-Type", "application/json"
+            http.SetRequestHeader "Accept", "application/json"
+
+            ' Send JSON data
+            http.Send JSON
+
+            ' Check for HTTP status
+            If http.Status = 200 Then
+                Cells(i, 2).Value = http.responseText ' Output response to Column B
+            Else
+                Cells(i, 2).Value = "Error: " & http.Status & " " & http.StatusText
+            End If
+
+            ' Release Object
+            Set http = Nothing
+        End If
+    Next i
+End Sub

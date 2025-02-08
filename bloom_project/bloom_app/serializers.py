@@ -11,3 +11,10 @@ class QuestionSerializer(serializers.Serializer):
 class PredictionResponseSerializer(serializers.Serializer):
     bloom_level = serializers.CharField()
     confidence = serializers.FloatField()
+
+class EmotionSerializer(serializers.Serializer):
+    text = serializers.CharField(required=True, allow_blank=False)
+
+class EmotionResponseSerializer(serializers.Serializer):
+    emotion = serializers.CharField()
+    confidence = serializers.FloatField()
