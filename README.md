@@ -34,9 +34,11 @@ python manage.py runserver
 🔌 API Үйлчилгээ
 Блүмийн ангилал
 ```bash
-curl -X POST http://localhost:8000/api/predict/ \
--H "Content-Type: application/json" \
--d '{"question": "Монгол улсын нийслэл хот аль вэ?"}'
+curl -X POST ^
+  http://localhost:8000/api/predict/ ^
+  -H "Content-Type: application/json" ^
+  -H "Accept: application/json" ^
+  -d "{\"question\":\"Жишээ асуулт?\"}"
 ```
 
 ```bash
