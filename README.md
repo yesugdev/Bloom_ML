@@ -42,9 +42,7 @@ curl -X POST ^
 ```
 
 ```bash
-curl -X POST http://localhost:8000/api/emotion/ \
--H "Content-Type: application/json" \
--d '{"text": "Би өнөөдөр их баяртай байна"}'
+curl -X POST http://localhost:8000/api/emotion/ -H "Content-Type: application/json" -d "{\"text\":\"Би зүгээр л уйтгартай, хөхөрч байна\"}"
 ```
 📈 Excel интеграци
 Excel програм нээх
