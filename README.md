@@ -45,6 +45,7 @@ Alt + F11 товч дарж VBA editor нээх
 macro_for_excel.txt файлыг импортлох
 A баганад текст оруулах
 Макрог ажиллуулах
+```
 🛠️ Ашигласан технологиуд
 Python 3.13+
 Django 4.0+
@@ -52,7 +53,7 @@ scikit-learn
 pandas
 Microsoft Excel
 📋 Шаардлагатай сангууд
-
+```
 👨‍💻 Зохиогч
 Yesug Bekhbold
 📄 Лиценз
