@@ -13,12 +13,13 @@
 ## ⚙️ Суулгах заавар
 ```bash
 # Төслийг татах
-git clone https://github.com/yesugen/emotion-bloom-api.git
-cd emotion-bloom-api
+git clone https://github.com/yesugdev/Bloom_ML
+cd Bloom_ML
 
 # Шаардлагатай сангуудыг суулгах
 pip install -r requirements.txt
 
+cd bloom_project
 # Өгөгдлийн сан үүсгэх
 python manage.py migrate
 
