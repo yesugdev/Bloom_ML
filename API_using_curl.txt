@@ -2,6 +2,7 @@ curl -X POST ^
   http://localhost:8000/api/predict/ ^
   -H "Content-Type: application/json" ^
   -H "Accept: application/json" ^
-  -d "{\"question\":\"Жишээ асуулт?\"}"
+  -d "{\"question\":\"Санаа нийлсэн үү?, QL Саналаа чөлөөтэй хэлээрэй хүүхдүүдээ.\"}"
+
 
   curl -X POST http://localhost:8000/api/emotion/ -H "Content-Type: application/json" -d "{\"text\":\"Би зүгээр л уйтгартай, хөхөрч байна\"}"

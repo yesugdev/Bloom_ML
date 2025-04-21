@@ -1,10 +1,17 @@
 import os
+import re
+import string
 import pandas as pd
 from django.shortcuts import render
+from django.http import HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+
 from .serializers import QuestionSerializer, PredictionResponseSerializer
+from .models import EmotionAnalyzer
+from .serializers import EmotionSerializer, EmotionResponseSerializer
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -12,37 +19,54 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from tqdm import tqdm
 
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-from django.http import HttpResponse
-from .models import EmotionAnalyzer
-from .serializers import EmotionSerializer, EmotionResponseSerializer
-import pandas as pd
-import io
+# === Load Mongolian Stopwords ===
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(APP_DIR, 'stopwords_mn.txt'), 'r', encoding='utf-8') as f:
+    stopwords_mn = set(word.strip() for word in f.readlines())
 
-# Load and preprocess data
+
+# === Text Cleaning Function ===
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r'\d+', '', text)
+    text = re.sub(r'[^\u0400-\u04FF\u1800-\u18AF\u1200-\u137F\u2D30-\u2D7F\u4E00-\u9FFFa-zA-Z\s]', '', text)
+    words = text.split()
+    cleaned = [word for word in words if word not in stopwords_mn]
+    return ' '.join(cleaned)
+
+# === Load Dataset ===
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 file_path = os.path.join(BASE_DIR, '8000_Блоом_түвшин_датасэт.xlsx')
 df = pd.read_excel(file_path)
+df.dropna(subset=['Questions', 'Category'], inplace=True)
+df = df[df['Questions'].str.len() > 10]
+df['Cleaned_Questions'] = df['Questions'].apply(clean_text)
+
+# === Encode Labels ===
 label_encoder = LabelEncoder()
 df['Label_Encoded'] = label_encoder.fit_transform(df['Category'])
-vectorizer = TfidfVectorizer(max_features=500)
-X = vectorizer.fit_transform(df['Questions']).toarray()
+
+# === TF-IDF Vectorizer ===
+vectorizer = TfidfVectorizer(max_features=1000)
+X = vectorizer.fit_transform(df['Cleaned_Questions']).toarray()
 y = df['Label_Encoded']
+
+# === Train Model ===
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-model = RandomForestClassifier(n_estimators=100, random_state=42)
+model = RandomForestClassifier(n_estimators=200, random_state=42)
 for _ in tqdm(range(1), desc="Training Progress", total=1):
     model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
 
+# === Prediction Function ===
 def predict_bloom_level(question):
-    new_question_vectorized = vectorizer.transform([question]).toarray()
-    predicted_label = model.predict(new_question_vectorized)
-    predicted_bloom_level = label_encoder.inverse_transform(predicted_label)
-    return predicted_bloom_level[0]
+    cleaned = clean_text(question)
+    vec = vectorizer.transform([cleaned]).toarray()
+    prediction = model.predict(vec)
+    return label_encoder.inverse_transform(prediction)[0]
 
+# === Index View (HTML Form) ===
 def index(request):
     if request.method == 'POST':
         question = request.POST['question']
@@ -50,28 +74,31 @@ def index(request):
         return render(request, 'bloom_app/index.html', {'bloom_level': bloom_level})
     return render(request, 'bloom_app/index.html')
 
+# === API Endpoint ===
 @api_view(['POST'])
 def predict_bloom_level_api(request):
     try:
         serializer = QuestionSerializer(data=request.data)
         if serializer.is_valid():
             question = serializer.validated_data['question']
-            bloom_level = predict_bloom_level(question)
-            
+            cleaned = clean_text(question)
+            vec = vectorizer.transform([cleaned]).toarray()
+            prediction = model.predict(vec)
+            confidence = model.predict_proba(vec).max()
+
             response_data = {
-                'bloom_level': bloom_level,
-                'confidence': model.predict_proba(vectorizer.transform([question]).toarray()).max()
+                'bloom_level': label_encoder.inverse_transform(prediction)[0],
+                'confidence': round(float(confidence), 3)
             }
-            
+
             response_serializer = PredictionResponseSerializer(data=response_data)
             if response_serializer.is_valid():
                 return Response(response_serializer.data, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     except Exception as e:
-        return Response(
-            {'error': str(e)}, 
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 from .models import EmotionAnalyzer  # Update import
 
