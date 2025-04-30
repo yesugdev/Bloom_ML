@@ -19,7 +19,7 @@ nltk.download('stopwords')
 nltk.download('wordnet')
 
 # 1. Load your dataset
-df = pd.read_csv("BloomTax.csv")  # Make sure the file is in your working directory
+df = pd.read_csv("blooms_taxonomy_dataset.csv")  # Make sure the file is in your working directory
 print(df.head())
 print("\nClass distribution:")
 print(df["Bloom's Taxonomy Level"].value_counts())
